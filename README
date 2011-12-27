@@ -1,0 +1,3 @@
+xPhotOrganizer is my first usable application in Python.
+With xPhotOrganizer you could organize you photos/images into directories
+	according with the EXIF data of the file.
