@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 __author__ = "Christian Relling (jcrelling@gmail.com)"
-__version__ = "1.1"
+__version__ = "1.0"
 __date__ = "10 Oct 2011"
 __name_app__ = "xPhotOrganizer"
 
@@ -20,7 +20,7 @@ class MainWindows(QtGui.QMainWindow):
         self.initUI()
                 
     def initUI(self):
-        self.setGeometry(200, 200, 600, 550)
+        self.setGeometry(200, 200, 600, 510)
         self.setWindowTitle(__name_app__)
         
         self.config = get_config()
@@ -63,8 +63,10 @@ class MainWindows(QtGui.QMainWindow):
         self.pushButtonClr.setGeometry(QtCore.QRect(280, 140, 31, 27))
         self.pushButtonClr.clicked.connect(self.pushButtonClrClk)
                 
-        self.DstFolder = QtGui.QLabel("Destination folder: "+self.dest_path, self)
-        self.DstFolder.setGeometry(QtCore.QRect(10, 480, 500, 31))
+        QtGui.QLabel("Destination folder", self).setGeometry(QtCore.QRect(320, 420, 140, 20))
+        self.DstFolder = QtGui.QLabel(self.dest_path, self)
+        self.DstFolder.setGeometry(QtCore.QRect(320, 440, 150, 31))
+        self.DstFolder.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Sunken)
         
         self.sb = QtGui.QStatusBar(self)
         self.setStatusBar(self.sb)
@@ -92,8 +94,6 @@ class MainWindows(QtGui.QMainWindow):
 
     def ChgDirBtnClk(self):
         self.rootDir = QtGui.QFileDialog.getExistingDirectory(self, ("Choose Directory"), self.root_path, QtGui.QFileDialog.ShowDirsOnly | QtGui.QFileDialog.DontResolveSymlinks)
-        if not self.DstDir:
-            print "null"
         self.root_path = str(self.rootDir).encode('utf-8')
         self.treeDir.filltreeDir(self.root_path)
         
@@ -191,7 +191,6 @@ class WorkThread(QtCore.QThread):
         self.qty = 0
         self.total = cant
         self.start()
-    
 
     def run(self):
         for index in xrange(self.lista.count()):
@@ -227,8 +226,52 @@ class ConfigWindow(QtGui.QWidget):
         self.initUI()
                 
     def initUI(self):
-        self.setGeometry(200, 200, 200, 200)
+        self.setGeometry(200, 200, 600, 200)
         self.setWindowTitle(__name_app__+" Config")
+        
+        self.config = get_config()
+        self.src_path = self.config.get('main', 'source_dir')
+        self.dst_path = self.config.get('main', 'dest_dir')
+    
+        QtGui.QLabel("Parameter", self).setGeometry(QtCore.QRect(10, 10, 140, 20))
+        QtGui.QLabel("Source folder: ", self).setGeometry(QtCore.QRect(10, 30, 140, 20))
+        QtGui.QLabel("Destination folder: ", self).setGeometry(QtCore.QRect(10, 50, 140, 20))
+        
+        QtGui.QLabel("Value", self).setGeometry(QtCore.QRect(150, 10, 300, 20))
+        self.src = QtGui.QLabel(self.src_path, self)
+        self.src.setGeometry(QtCore.QRect(150, 30, 300, 20))
+        self.src.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Sunken)
+        self.dst = QtGui.QLabel(self.dst_path, self)
+        self.dst.setGeometry(QtCore.QRect(150, 50, 300, 20))
+        self.dst.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Sunken)
+        
+        self.src_btn = QtGui.QPushButton("...", self)
+        self.src_btn.setGeometry(QtCore.QRect(450, 30, 30, 20))
+        self.src_btn.clicked.connect(lambda: self.ChgDirBtnClk(self.src))
+        self.dst_btn = QtGui.QPushButton("...", self)
+        self.dst_btn.setGeometry(QtCore.QRect(450, 50, 30, 20))
+        self.dst_btn.clicked.connect(lambda: self.ChgDirBtnClk(self.dst))
+        
+        self.save_btn = QtGui.QPushButton("Save", self)
+        self.save_btn.setGeometry(QtCore.QRect((450-80), 80, 80, 30))
+        self.save_btn.clicked.connect(self.SaveBtnClk)
+
+        self.cancel_btn = QtGui.QPushButton("Cancel", self)
+        self.cancel_btn.setGeometry(QtCore.QRect(450, 80, 80, 30))
+        self.cancel_btn.clicked.connect(self.close)
+        
+        
+    def ChgDirBtnClk(self, caller):
+        dir_tmp = QtGui.QFileDialog.getExistingDirectory(self, ("Choose Directory"), os.path.join(os.path.expanduser("~"),""), QtGui.QFileDialog.ShowDirsOnly | QtGui.QFileDialog.DontResolveSymlinks)
+        dir = dir_tmp.toUtf8()
+        caller.setText(str(dir))
+    
+    def SaveBtnClk(self):
+        print self.src.text()
+        self.config.set('main', 'source_dir', str(self.src.text()))
+        self.config.set('main', 'dest_dir', str(self.dst.text()))
+        write_config(self.config)
+        self.close()
         
 
 def main():
