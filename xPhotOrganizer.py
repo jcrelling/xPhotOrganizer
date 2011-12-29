@@ -12,7 +12,7 @@ import re
 import pyexiv2
 import shutil
 from PyQt4 import QtGui, QtCore
-from util import get_config, write_config, count_files
+from util import get_config, write_config, count_files, file_size, sizeof_fmt
 
 class MainWindows(QtGui.QMainWindow):
     def __init__(self):
@@ -41,6 +41,7 @@ class MainWindows(QtGui.QMainWindow):
             
         self.DirList = []
         self.TotalQty = 0
+        self.TotalSize = 0
             
         self.treeDir = treeDir(self, self.root_path)
         
@@ -65,7 +66,7 @@ class MainWindows(QtGui.QMainWindow):
                 
         QtGui.QLabel("Destination folder", self).setGeometry(QtCore.QRect(320, 420, 140, 20))
         self.DstFolder = QtGui.QLabel(self.dest_path, self)
-        self.DstFolder.setGeometry(QtCore.QRect(320, 440, 150, 31))
+        self.DstFolder.setGeometry(QtCore.QRect(320, 440, 256, 31))
         self.DstFolder.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Sunken)
         
         self.sb = QtGui.QStatusBar(self)
@@ -100,7 +101,7 @@ class MainWindows(QtGui.QMainWindow):
     def ChgDstDirBtnClk(self):
         self.DstDir = QtGui.QFileDialog.getExistingDirectory(self, ("Choose Directory"), self.dest_path, QtGui.QFileDialog.ShowDirsOnly | QtGui.QFileDialog.DontResolveSymlinks)
         self.dest_path = str(self.DstDir).encode('utf-8')
-        self.DstFolder.setText("Destination folder: "+self.dest_path)
+        self.DstFolder.setText(self.dest_path)
 
     def pushButtonRightClk(self):
         base_path = self.AddCurrentItem(self.treeDir.currentItem())
@@ -114,7 +115,8 @@ class MainWindows(QtGui.QMainWindow):
             reply = QtGui.QMessageBox.question(self, 'Remove Item', "Are you sure to remove this item?", QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
             if reply == QtGui.QMessageBox.Yes:
                 self.TotalQty -= count_files(self.lstSelectedDir.currentItem().text())
-                self.sb.showMessage('Photo Selected: '+str(self.TotalQty))
+                self.TotalSize -= file_size(str(self.lstSelectedDir.currentItem().text()))
+                self.sb.showMessage('Photo Selected: '+str(self.TotalQty)+' ('+sizeof_fmt(self.TotalSize)+')')
                 self.DirList.remove(self.lstSelectedDir.currentItem().text())
                 self.lstSelectedDir.takeItem(self.lstSelectedDir.row(self.lstSelectedDir.currentItem()))
         
@@ -125,7 +127,8 @@ class MainWindows(QtGui.QMainWindow):
                 self.lstSelectedDir.clear()
                 self.DirList = []
                 self.TotalQty = 0
-                self.sb.showMessage('Photo Selected: '+str(self.TotalQty))
+                self.TotalSize = 0
+                self.sb.showMessage('Photo Selected: '+str(self.TotalQty)+' ('+sizeof_fmt(self.TotalSize)+')')
                     
     def CpyFileBtnClk(self):
         self.mi_thread.render(self.lstSelectedDir, self.dest_path, self.TotalQty)
@@ -147,7 +150,8 @@ class MainWindows(QtGui.QMainWindow):
                     self.DirList.append(k)
                     self.lstSelectedDir.addItem(k)
                     self.TotalQty += count_files(k)
-                    self.sb.showMessage('Photo Selected: '+str(self.TotalQty))
+                    self.TotalSize += file_size(k)
+                    self.sb.showMessage('Photo Selected: '+str(self.TotalQty)+' ('+sizeof_fmt(self.TotalSize)+')')
                 else:
                     msg = "The directory '"+k+"' already exist into the list"
                     reply = QtGui.QMessageBox.information(self, 'Warning', msg, QtGui.QMessageBox.Ok)
