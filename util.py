@@ -24,8 +24,8 @@ def get_config():
     """
     """
     DEFAULTS = { 'main': {
-                    "source_dir": os.path.join(DEFAULT_PATH, "Pictures"),
-                    "dest_dir": os.path.join(DEFAULT_PATH, "Videos"),
+                    "source_dir": os.path.join(DEFAULT_PATH, ""),
+                    "dest_dir": os.path.join(DEFAULT_PATH, "Pictures"),
                     },
                 }
     config = SafeConfigParser()
@@ -57,6 +57,20 @@ def convert_pos(g, m, s):
 def count_files(directory):
     qty = 0
     for filename in os.listdir(directory):
-                if re.match(r'.*\.jpg$', filename, re.I):
-                    qty += 1
+        if re.match(r'.*\.jpg$', filename, re.I):
+            qty += 1
     return qty
+
+def file_size(directory):
+    size = 0
+    for filename in os.listdir(directory):
+        print directory, filename
+        if re.match(r'.*\.jpg$', filename, re.I):
+                    size += os.path.getsize(os.path.join(directory,filename))
+    return size
+
+def sizeof_fmt(num):
+    for x in ['bytes','KB','MB','GB','TB']:
+        if num < 1024.0:
+            return "%3.1f%s" % (num, x)
+        num /= 1024.0
