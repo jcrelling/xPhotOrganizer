@@ -39,6 +39,11 @@ class MainWindows(QtGui.QMainWindow):
         else:
             self.dest_path = sys.argv[2]
             
+        self.folder_format = self.config.get('main', 'folder_format')
+        
+        self.folder_list = []
+        
+            
         self.DirList = []
         self.TotalQty = 0
         self.TotalSize = 0
@@ -133,11 +138,11 @@ class MainWindows(QtGui.QMainWindow):
     def CpyFileBtnClk(self):
         self.mi_thread.render(self.lstSelectedDir, self.dest_path, self.TotalQty)
     
-    def updateBar(self, n):
+    def updateBar(self, n, file):
         self.pb.show()
         self.pb.setRange(0, self.TotalQty)
         self.pb.setValue(n)
-        self.sb.showMessage(self.tr("Copying photo: "+str(n)+" of "+str(self.TotalQty)))
+        self.sb.showMessage(self.tr("Copying photo: "+str(n)+" of "+str(self.TotalQty)+". File: "+file))
     
     def updateStatus(self):
         self.pb.hide()
@@ -202,7 +207,7 @@ class WorkThread(QtCore.QThread):
             for filename in os.listdir(src_path):
                 if re.match(r'.*\.jpg$', filename, re.I):
                     self.qty += 1
-                    self.emit(QtCore.SIGNAL('update'), self.qty)
+                    self.emit(QtCore.SIGNAL('update'), self.qty, filename)
                     try:
                         file = os.path.join(src_path, filename)
                         metadata = pyexiv2.ImageMetadata(file)
