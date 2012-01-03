@@ -64,9 +64,8 @@ def count_files(directory):
 def file_size(directory):
     size = 0
     for filename in os.listdir(directory):
-        print directory, filename
         if re.match(r'.*\.jpg$', filename, re.I):
-                    size += os.path.getsize(os.path.join(directory,filename))
+            size += os.path.getsize(os.path.join(str(directory),filename))
     return size
 
 def sizeof_fmt(num):

@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 __author__ = "Christian Relling (jcrelling@gmail.com)"
-__version__ = "1.0"
-__date__ = "10 Oct 2011"
+__version__ = "1.2"
+__date__ = "02 Jan 2012"
 __name_app__ = "xPhotOrganizer"
 
 import sys
@@ -48,7 +48,18 @@ class MainWindows(QtGui.QMainWindow):
         self.TotalQty = 0
         self.TotalSize = 0
             
-        self.treeDir = treeDir(self, self.root_path)
+        self.treeDir = QtGui.QTreeView(self)
+        self.tree_model = QtGui.QFileSystemModel()
+        self.tree_model.setRootPath(self.root_path)                                                                                                                                          
+        self.tree_model.setFilter(                                                                                                                                                             
+            QtCore.QDir.AllDirs | QtCore.QDir.NoDotAndDotDot)                                                                                                                                       
+        self.treeDir.setModel(self.tree_model)                                                                                                                                          
+        index = self.tree_model.index(self.root_path)                                                                                                                                        
+        self.treeDir.setColumnHidden(1, True)                                                                                                                                             
+        self.treeDir.setColumnHidden(2, True)                                                                                                                                             
+        self.treeDir.setColumnHidden(3, True)                                                           
+        self.treeDir.setRootIndex(index)
+        self.treeDir.setGeometry(QtCore.QRect(10, 50, 256, 361))
         
         self.chkSubDir = QtGui.QCheckBox("SubDirectories?", self)
         self.chkSubDir.setGeometry(QtCore.QRect(10, 420, 151, 31))
@@ -109,12 +120,24 @@ class MainWindows(QtGui.QMainWindow):
         self.DstFolder.setText(self.dest_path)
 
     def pushButtonRightClk(self):
-        base_path = self.AddCurrentItem(self.treeDir.currentItem())
+        selectedIndex = self.treeDir.selectedIndexes()
+        file = self.tree_model.filePath(selectedIndex[0])
+        self.AddCurrentItem(file)
         if self.chkSubDir.isChecked() is True:
-            for k, v in self.treeDir.getIds().iteritems():
-                if k.startswith(base_path) and not base_path == k:
-                    self.AddCurrentItem(v)
-
+            allDirs = self.recursive_add(file)
+            for k in allDirs:
+                self.AddCurrentItem(k)
+                
+    def recursive_add(self, src, entries=[]):
+        if not entries:
+            entries = []
+        dir = QtCore.QDir(src)
+        for i in dir.entryList(QtCore.QDir.NoDotAndDotDot | QtCore.QDir.Dirs):
+            info = QtCore.QFileInfo(dir.absoluteFilePath(i))
+            entries.append(info.absoluteFilePath())
+            self.recursive_add(info.absoluteFilePath(), entries)
+        return entries
+        
     def pushButtonLeftClk(self):
         if self.lstSelectedDir.currentItem() is not None:
             reply = QtGui.QMessageBox.question(self, 'Remove Item', "Are you sure to remove this item?", QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
@@ -148,50 +171,20 @@ class MainWindows(QtGui.QMainWindow):
         self.pb.hide()
         self.sb.showMessage('Ready')
         
-    def AddCurrentItem(self, currentItem):
-        for k, v in self.treeDir.getIds().iteritems():
-            if currentItem == v:
-                if k not in self.DirList:
-                    self.DirList.append(k)
-                    self.lstSelectedDir.addItem(k)
-                    self.TotalQty += count_files(k)
-                    self.TotalSize += file_size(k)
-                    self.sb.showMessage('Photo Selected: '+str(self.TotalQty)+' ('+sizeof_fmt(self.TotalSize)+')')
-                else:
-                    msg = "The directory '"+k+"' already exist into the list"
-                    reply = QtGui.QMessageBox.information(self, 'Warning', msg, QtGui.QMessageBox.Ok)
-                return k
+    def AddCurrentItem(self, item):
+        if item not in self.DirList:
+            self.DirList.append(item)
+            self.lstSelectedDir.addItem(item)
+            self.TotalQty += count_files(item)
+            self.TotalSize += file_size(item)
+            self.sb.showMessage('Photo Selected: '+str(self.TotalQty)+' ('+sizeof_fmt(self.TotalSize)+')')
+        else:
+            msg = "The directory '"+item+"' already exist into the list"
+            reply = QtGui.QMessageBox.information(self, 'Warning', msg, QtGui.QMessageBox.Ok)
             
     def ConfigurationW(self):
         self.configw = ConfigWindow()
         self.configw.show()
-    
-class treeDir(QtGui.QTreeWidget):
-    def __init__(self, parent, rootDir):
-        super(treeDir, self).__init__(parent)
-        self.inittreeDir(rootDir)
-        self.filltreeDir(rootDir)
-                
-    def inittreeDir(self, columnlabel):
-        self.setGeometry(QtCore.QRect(10, 50, 256, 361))
-        self.setColumnCount(1)
-        self.header().hide()
-        
-    def filltreeDir(self, rootDir):
-        self.clear()
-        self.ids = {rootDir : QtGui.QTreeWidgetItem(self, (rootDir,))}
-        for (root, dirs, files) in os.walk(rootDir):
-            if re.match(r'^[^\..]+$' ,root):
-                for d in dirs:
-                    if re.match(r'^[^\..]+$' ,d):
-                        root_deco = root.decode('utf-8')
-                        d_deco = d.decode('utf-8')
-                        fullpath = os.path.join(root_deco, d_deco)
-                        self.ids[fullpath] = QtGui.QTreeWidgetItem(self.ids[root_deco], (d_deco,))
-    
-    def getIds(self):
-        return self.ids
-
 
 class WorkThread(QtCore.QThread):
     def render(self, lista, destino, cant):
