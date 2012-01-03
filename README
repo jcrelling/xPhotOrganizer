@@ -1,3 +1,9 @@
 xPhotOrganizer is my first usable application in Python.
 With xPhotOrganizer you could organize you photos/images into directories
 	according with the EXIF data of the file.
+Version Log
+1.0:    Initial usable release.
+1.2:    New TreeView Model thru QFileSystemModel
+        More info into status bar:
+                                        Total size of images
+                                        Display file name while it is copying
