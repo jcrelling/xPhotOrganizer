@@ -223,8 +223,13 @@ class WorkThread(QtCore.QThread):
                     self.emit(QtCore.SIGNAL('update'), self.qty, filename)
                     try:
                         file = os.path.join(src_path, filename)
-                        metadata = pyexiv2.ImageMetadata(file)
-                        metadata.read()
+                        pyexiv2_version = pyexiv2.__version__.split('.')
+                        if pyexiv2_version[1] < 2:
+                            metadata = pyexiv2.Image(file)
+                            metadata.readMetadata()
+                        else:
+                            metadata = pyexiv2.ImageMetadata(file)
+                            metadata.read()
                         tag = metadata['Exif.Photo.DateTimeOriginal']
                         year = tag.value.strftime('%Y')
                         month = tag.value.strftime('%m')
@@ -238,7 +243,7 @@ class WorkThread(QtCore.QThread):
                         if not os.path.isdir(dest_fullpath):
                             os.makedirs(dest_fullpath)
                         shutil.copy2(file, dest_fullpath)
-                    except:
+                    except AttributeError:
                         raise
 
 
