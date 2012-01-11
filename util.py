@@ -56,16 +56,18 @@ def convert_pos(g, m, s):
 
 def count_files(directory):
     qty = 0
-    for filename in os.listdir(directory):
+    dir = str(directory.toUtf8()).decode('utf-8')
+    for filename in os.listdir(dir):
         if re.match(r'.*\.jpg$', filename, re.I):
             qty += 1
     return qty
 
 def file_size(directory):
     size = 0
-    for filename in os.listdir(directory):
+    dir = str(directory.toUtf8()).decode('utf-8')
+    for filename in os.listdir(dir):
         if re.match(r'.*\.jpg$', filename, re.I):
-            size += os.path.getsize(os.path.join(str(directory),filename))
+            size += os.path.getsize(os.path.join(dir,filename))
     return size
 
 def sizeof_fmt(num):
