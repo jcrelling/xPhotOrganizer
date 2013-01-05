@@ -14,6 +14,7 @@ import shutil
 from PyQt4 import QtGui, QtCore
 from util import get_config, write_config, count_files, file_size, sizeof_fmt
 
+
 class MainWindows(QtGui.QMainWindow):
     def __init__(self):
         super(MainWindows, self).__init__()
@@ -39,10 +40,7 @@ class MainWindows(QtGui.QMainWindow):
         else:
             self.dest_path = sys.argv[2]
 
-##        self.folder_format = self.config.get('main', 'folder_format')
-
         self.folder_list = []
-
 
         self.DirList = []
         self.TotalQty = 0
@@ -133,19 +131,19 @@ class MainWindows(QtGui.QMainWindow):
 
     def pushButtonRightClk(self):
         selectedIndex = self.treeDir.selectedIndexes()
-        file = self.tree_model.filePath(selectedIndex[0])
-        self.AddCurrentItem(file)
+        SelectedDir = self.tree_model.filePath(selectedIndex[0])
+        self.AddCurrentItem(SelectedDir)
         if self.chkSubDir.isChecked() is True:
-            allDirs = self.recursive_add(file)
-            for k in allDirs:
-                self.AddCurrentItem(k)
+            allDirs = self.recursive_add(SelectedDir)
+            for Dirs in allDirs:
+                self.AddCurrentItem(Dirs)
 
     def recursive_add(self, src, entries=[]):
         if not entries:
             entries = []
-        dir = QtCore.QDir(src)
-        for i in dir.entryList(QtCore.QDir.NoDotAndDotDot | QtCore.QDir.Dirs):
-            info = QtCore.QFileInfo(dir.absoluteFilePath(i))
+        SelectedDir = QtCore.QDir(src)
+        for i in SelectedDir.entryList(QtCore.QDir.NoDotAndDotDot | QtCore.QDir.Dirs):
+            info = QtCore.QFileInfo(SelectedDir.absoluteFilePath(i))
             entries.append(info.absoluteFilePath())
             self.recursive_add(info.absoluteFilePath(), entries)
         return entries
@@ -159,8 +157,8 @@ class MainWindows(QtGui.QMainWindow):
                 current = self.lstSelectedDir.currentItem()
                 self.TotalQty -= count_files(current.text())
                 self.TotalSize -= file_size(current.text())
-                self.sb.showMessage('Photo Selected: '+str(self.TotalQty)+
-                    ' ('+sizeof_fmt(self.TotalSize)+')')
+                self.sb.showMessage('Photo Selected: ' + str(self.TotalQty) +
+                    ' (' + sizeof_fmt(self.TotalSize) + ')')
                 self.DirList.remove(current.text())
                 self.lstSelectedDir.takeItem(self.lstSelectedDir.row(current))
 
@@ -175,8 +173,8 @@ class MainWindows(QtGui.QMainWindow):
                 self.DirList = []
                 self.TotalQty = 0
                 self.TotalSize = 0
-                self.sb.showMessage('Photo Selected: '+str(self.TotalQty)+
-                    ' ('+sizeof_fmt(self.TotalSize)+')')
+                self.sb.showMessage('Photo Selected: ' + str(self.TotalQty) +
+                    ' (' + sizeof_fmt(self.TotalSize) + ')')
 
     def CpyFileBtnClk(self):
         self.mi_thread.render(self.lstSelectedDir, self.dest_path, self.TotalQty)
@@ -185,7 +183,8 @@ class MainWindows(QtGui.QMainWindow):
         self.pb.show()
         self.pb.setRange(0, self.TotalQty)
         self.pb.setValue(n)
-        self.sb.showMessage(self.tr("Copying photo: "+str(n)+" of "+str(self.TotalQty)+". File: "+file))
+        self.sb.showMessage(self.tr("Copying photo: " + str(n) + " of " +
+            str(self.TotalQty) + ". File: " + file))
 
     def updateStatus(self):
         self.pb.hide()
@@ -197,14 +196,16 @@ class MainWindows(QtGui.QMainWindow):
             self.lstSelectedDir.addItem(item)
             self.TotalQty += count_files(item)
             self.TotalSize += file_size(item)
-            self.sb.showMessage('Photo Selected: '+str(self.TotalQty)+' ('+sizeof_fmt(self.TotalSize)+')')
+            self.sb.showMessage('Photo Selected: ' + str(self.TotalQty) +
+                ' (' + sizeof_fmt(self.TotalSize) + ')')
         else:
-            msg = "The directory '"+item+"' already exist into the list"
+            msg = "The directory '" + item + "' already exist into the list"
             reply = QtGui.QMessageBox.information(self, 'Warning', msg, QtGui.QMessageBox.Ok)
 
     def ConfigurationW(self):
         self.configw = ConfigWindow()
         self.configw.show()
+
 
 class WorkThread(QtCore.QThread):
     def render(self, lista, destino, cant):
@@ -222,13 +223,13 @@ class WorkThread(QtCore.QThread):
                     self.qty += 1
                     self.emit(QtCore.SIGNAL('update'), self.qty, filename)
                     try:
-                        file = os.path.join(src_path, filename)
+                        CurrentFile = os.path.join(src_path, filename)
                         pyexiv2_version = pyexiv2.__version__.split('.')
                         if pyexiv2_version[1] < 2:
-                            metadata = pyexiv2.Image(file)
+                            metadata = pyexiv2.Image(CurrentFile)
                             metadata.readMetadata()
                         else:
-                            metadata = pyexiv2.ImageMetadata(file)
+                            metadata = pyexiv2.ImageMetadata(CurrentFile)
                             metadata.read()
                         tag = metadata['Exif.Photo.DateTimeOriginal']
                         year = tag.value.strftime('%Y')
@@ -236,15 +237,13 @@ class WorkThread(QtCore.QThread):
                         dest_fullpath = os.path.join(self.dest, year, month)
                         if not os.path.isdir(dest_fullpath):
                             os.makedirs(dest_fullpath)
-                        shutil.copy2(file, dest_fullpath)
+                        shutil.copy2(CurrentFile, dest_fullpath)
                     except KeyError:
-                        file = os.path.join(src_path, filename)
+                        CurrentFile = os.path.join(src_path, filename)
                         dest_fullpath = os.path.join(self.dest, "without_date")
                         if not os.path.isdir(dest_fullpath):
                             os.makedirs(dest_fullpath)
-                        shutil.copy2(file, dest_fullpath)
-                    except AttributeError:
-                        raise
+                        shutil.copy2(CurrentFile, dest_fullpath)
 
 
 class ConfigWindow(QtGui.QWidget):
@@ -254,7 +253,7 @@ class ConfigWindow(QtGui.QWidget):
 
     def initUI(self):
         self.setGeometry(200, 200, 600, 200)
-        self.setWindowTitle(__name_app__+" Config")
+        self.setWindowTitle(__name_app__ + " Config")
 
         self.config = get_config()
         self.src_path = self.config.get('main', 'source_dir')
@@ -280,18 +279,17 @@ class ConfigWindow(QtGui.QWidget):
         self.dst_btn.clicked.connect(lambda: self.ChgDirBtnClk(self.dst))
 
         self.save_btn = QtGui.QPushButton("Save", self)
-        self.save_btn.setGeometry(QtCore.QRect((450-80), 80, 80, 30))
+        self.save_btn.setGeometry(QtCore.QRect((450 - 80), 80, 80, 30))
         self.save_btn.clicked.connect(self.SaveBtnClk)
 
         self.cancel_btn = QtGui.QPushButton("Cancel", self)
         self.cancel_btn.setGeometry(QtCore.QRect(450, 80, 80, 30))
         self.cancel_btn.clicked.connect(self.close)
 
-
     def ChgDirBtnClk(self, caller):
         dir_tmp = QtGui.QFileDialog.getExistingDirectory(self, ("Choose Directory"), os.path.join(os.path.expanduser("~"),""), QtGui.QFileDialog.ShowDirsOnly | QtGui.QFileDialog.DontResolveSymlinks)
-        dir = dir_tmp.toUtf8()
-        caller.setText(str(dir))
+        NewDir = dir_tmp.toUtf8()
+        caller.setText(str(NewDir))
 
     def SaveBtnClk(self):
         print self.src.text()
